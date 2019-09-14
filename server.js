@@ -31,6 +31,9 @@ const
 // Sets server port and logs message on success
 app.listen(process.env.PORT || 1337, () => console.log('webhook is listening'));
 
+app.get('/', (req, res) => {
+    res.json('Hello from Jarvis ...');
+});
 // Accepts POST requests at /webhook endpoint
 app.post('/webhook', (req, res) => {
 
@@ -75,7 +78,7 @@ app.post('/webhook', (req, res) => {
 app.get('/webhook', (req, res) => {
 
     /** UPDATE YOUR VERIFY TOKEN **/
-    const VERIFY_TOKEN = "<YOUR VERIFY TOKEN>";
+    const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 
     // Parse params from the webhook verification request
     let mode = req.query['hub.mode'];
