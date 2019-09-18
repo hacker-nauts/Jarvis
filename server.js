@@ -18,7 +18,6 @@
  * 4. Add your PAGE_ACCESS_TOKEN to your environment vars
  *
  */
-
 "use strict";
 const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
 // Imports dependencies and set up http server
@@ -26,6 +25,8 @@ const request = require("request"),
   express = require("express"),
   body_parser = require("body-parser"),
   app = express().use(body_parser.json()); // creates express http server
+
+const templates = require('./templates');
 
 // Sets server port and logs message on success
 app.listen(process.env.PORT || 1337, () => console.log("webhook is listening"));
@@ -37,20 +38,16 @@ app.get("/", (req, res) => {
 app.post("/webhook", (req, res) => {
   // Parse the request body from the POST
   let body = req.body;
-
   // Check the webhook event is from a Page subscription
   if (body.object === "page") {
     body.entry.forEach(function(entry) {
       // Gets the body of the webhook event
       let webhook_event = entry.messaging[0];
-      console.log(webhook_event);
-
       // Get the sender PSID
       let sender_psid = webhook_event.sender.id;
-      console.log("Sender ID: " + sender_psid);
-
       // Check if the event is a message or postback and
       // pass the event to the appropriate handler function
+      console.log(webhook_event);
       if (webhook_event.message) {
         handleMessage(sender_psid, webhook_event.message);
       } else if (webhook_event.postback) {
@@ -64,23 +61,19 @@ app.post("/webhook", (req, res) => {
     res.sendStatus(404);
   }
 });
-
 // Accepts GET requests at the /webhook endpoint
 app.get("/webhook", (req, res) => {
   /** UPDATE YOUR VERIFY TOKEN **/
   const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
-
   // Parse params from the webhook verification request
   let mode = req.query["hub.mode"];
   let token = req.query["hub.verify_token"];
   let challenge = req.query["hub.challenge"];
-
   // Check if a token and mode were sent
   if (mode && token) {
     // Check the mode and token sent are correct
     if (mode === "subscribe" && token === VERIFY_TOKEN) {
       // Respond with 200 OK and challenge token from the request
-      console.log("WEBHOOK_VERIFIED");
       res.status(200).send(challenge);
     } else {
       // Responds with '403 Forbidden' if verify tokens do not match
@@ -93,78 +86,15 @@ function handleMessage(sender_psid, received_message) {
   let response;
   // Checks if the message contains
   if (received_message.text) {
-    if (received_message.text !== "yes" && received_message.text !== "no") {
-      response = {
-        attachment: {
-          type: "template",
-          payload: {
-            template_type: "button",
-            text: "Awesome, try your filter!",
-            buttons: [
-              {
-                type: "web_url",
-                url:
-                  "ttps://www.facebook.com/fbcameraeffects/tryit/377229799841547/",
-                title: "Try Now",
-                webview_height_ratio: "full"
-              }
-            ]
-          }
-        }
-      };
+    if (received_message.text !== "Yes" || received_message.text !== "No") {
+      response = templates.filterResponse();
     } else {
-      response = {
-        attachment: {
-          type: "template",
-          payload: {
-            template_type: "button",
-            text: "Would you like a frame for your event?",
-            buttons: [
-              {
-                type: "postback",
-                title: "Yes",
-                payload: "yes"
-              },
-              {
-                type: "postback",
-                title: "No",
-                payload: "no"
-              }
-            ]
-          }
-        }
-      };
+      response = templates.pictureResponse();
     }
   } else if (received_message.attachments) {
     // Get the URL of the message attachment
     let attachment_url = received_message.attachments[0].payload.url;
-    response = {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "generic",
-          elements: [
-            {
-              title: "Your picture for the frame?",
-              subtitle: "Tap Yes to confirm.",
-              image_url: attachment_url,
-              buttons: [
-                {
-                  type: "postback",
-                  title: "Yes!",
-                  payload: "yes"
-                },
-                {
-                  type: "postback",
-                  title: "No!",
-                  payload: "no"
-                }
-              ]
-            }
-          ]
-        }
-      }
-    };
+    response = templates.confirmPicture();
   }
   // Send the response message
   callSendAPI(sender_psid, response);
@@ -176,13 +106,9 @@ function handlePostback(sender_psid, received_postback) {
   let payload = received_postback.payload;
   // Set the response based on the postback payload
   if (payload === "yes") {
-    response = {
-      text: "What would you like caption for your event?"
-    };
+    response = templates.text('What would you like caption for your event?');
   } else if (payload === "no") {
-    response = {
-      text: "No Worries, explore our page!"
-    };
+    response = templates.text('No Worries, explore our page!');
   }
   // Send the message to acknowledge the postback
   callSendAPI(sender_psid, response);
@@ -190,7 +116,7 @@ function handlePostback(sender_psid, received_postback) {
 
 function callSendAPI(sender_psid, response) {
   // Construct the message body
-  let request_body = {
+  let request_body = {  
     recipient: {
       id: sender_psid
     },
