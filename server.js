@@ -26,7 +26,7 @@ const request = require("request"),
   body_parser = require("body-parser"),
   app = express().use(body_parser.json()); // creates express http server
 
-const templates = require('./templates');
+const templates = require('./templates.js');
 
 // Sets server port and logs message on success
 app.listen(process.env.PORT || 1337, () => console.log("webhook is listening"));
@@ -47,7 +47,6 @@ app.post("/webhook", (req, res) => {
       let sender_psid = webhook_event.sender.id;
       // Check if the event is a message or postback and
       // pass the event to the appropriate handler function
-      console.log(webhook_event);
       if (webhook_event.message) {
         handleMessage(sender_psid, webhook_event.message);
       } else if (webhook_event.postback) {
@@ -86,15 +85,15 @@ function handleMessage(sender_psid, received_message) {
   let response;
   // Checks if the message contains
   if (received_message.text) {
-    if (received_message.text !== "Yes" || received_message.text !== "No") {
-      response = templates.filterResponse();
-    } else {
+    if (received_message.text.includes("Yes") || received_message.text.includes("No")) {
       response = templates.pictureResponse();
+    } else {
+      response = templates.filterResponse();
     }
   } else if (received_message.attachments) {
     // Get the URL of the message attachment
     let attachment_url = received_message.attachments[0].payload.url;
-    response = templates.confirmPicture();
+    response = templates.confirmResponse();
   }
   // Send the response message
   callSendAPI(sender_psid, response);
@@ -106,9 +105,9 @@ function handlePostback(sender_psid, received_postback) {
   let payload = received_postback.payload;
   // Set the response based on the postback payload
   if (payload === "yes") {
-    response = templates.text('What would you like caption for your event?');
+    response = templates.textResponse('What would you like caption for your event?');
   } else if (payload === "no") {
-    response = templates.text('No Worries, explore our page!');
+    response = templates.textResponse(`No Worries, explore our page!`);
   }
   // Send the message to acknowledge the postback
   callSendAPI(sender_psid, response);
@@ -141,3 +140,4 @@ function callSendAPI(sender_psid, response) {
     }
   );
 }
+
