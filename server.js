@@ -31,7 +31,7 @@ const request = require("request"),
 app.listen(process.env.PORT || 1337, () => console.log("webhook is listening"));
 
 app.get("/", (req, res) => {
-  res.json("Hello from Jarvis ...");
+  res.json("Hello from Jarvis :) ...");
 });
 // Accepts POST requests at /webhook endpoint
 app.post("/webhook", (req, res) => {
@@ -91,14 +91,50 @@ app.get("/webhook", (req, res) => {
 
 function handleMessage(sender_psid, received_message) {
   let response;
-
-  // Checks if the message contains text
+  // Checks if the message contains
   if (received_message.text) {
-    // Create the payload for a basic text message, which
-    // will be added to the body of our request to the Send API
-    response = {
-      text: `You sent the message: "${received_message.text}". Now send me an attachment!`
-    };
+    if (received_message.text !== "yes" && received_message.text !== "no") {
+      response = {
+        attachment: {
+          type: "template",
+          payload: {
+            template_type: "button",
+            text: "Awesome, try your filter!",
+            buttons: [
+              {
+                type: "web_url",
+                url:
+                  "ttps://www.facebook.com/fbcameraeffects/tryit/377229799841547/",
+                title: "Try Now",
+                webview_height_ratio: "full"
+              }
+            ]
+          }
+        }
+      };
+    } else {
+      response = {
+        attachment: {
+          type: "template",
+          payload: {
+            template_type: "button",
+            text: "Would you like a frame for your event?",
+            buttons: [
+              {
+                type: "postback",
+                title: "Yes",
+                payload: "yes"
+              },
+              {
+                type: "postback",
+                title: "No",
+                payload: "no"
+              }
+            ]
+          }
+        }
+      };
+    }
   } else if (received_message.attachments) {
     // Get the URL of the message attachment
     let attachment_url = received_message.attachments[0].payload.url;
@@ -109,8 +145,8 @@ function handleMessage(sender_psid, received_message) {
           template_type: "generic",
           elements: [
             {
-              title: "Is this the right picture?",
-              subtitle: "Tap a button to answer.",
+              title: "Your picture for the frame?",
+              subtitle: "Tap Yes to confirm.",
               image_url: attachment_url,
               buttons: [
                 {
@@ -130,25 +166,22 @@ function handleMessage(sender_psid, received_message) {
       }
     };
   }
-
   // Send the response message
   callSendAPI(sender_psid, response);
 }
 
 function handlePostback(sender_psid, received_postback) {
-  console.log("ok");
   let response;
   // Get the payload for the postback
   let payload = received_postback.payload;
-
   // Set the response based on the postback payload
   if (payload === "yes") {
     response = {
-      text: "Thanks!"
+      text: "What would you like caption for your event?"
     };
   } else if (payload === "no") {
     response = {
-      text: "Oops, try sending another image."
+      text: "No Worries, explore our page!"
     };
   }
   // Send the message to acknowledge the postback
@@ -163,7 +196,6 @@ function callSendAPI(sender_psid, response) {
     },
     message: response
   };
-
   // Send the HTTP request to the Messenger Platform
   request(
     {
