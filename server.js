@@ -85,8 +85,8 @@ function handleMessage(sender_psid, received_message) {
   let response;
   // Checks if the message contains
   if (received_message.text) {
-    if (received_message.text.includes("Yes") || received_message.text.includes("No")) {
-      response = templates.pictureResponse();
+    if (received_message.text.startsWith("#")) {
+      response = templates.textResponse('Please attach an image');
     } else {
       response = templates.filterResponse();
     }
@@ -104,14 +104,52 @@ function handlePostback(sender_psid, received_postback) {
   // Get the payload for the postback
   let payload = received_postback.payload;
   // Set the response based on the postback payload
-  if (payload === "yes") {
-    response = templates.textResponse('What would you like caption for your event?');
-  } else if (payload === "no") {
-    response = templates.textResponse(`No Worries, explore our page!`);
+  switch(payload){
+    case 'yes':
+      response = templates.textResponse('Please type your caption starting with #');
+      break;
+    case 'no':
+      response = templates.textResponse('Cool!');
+      break;
+    case 'yesFrame':
+      response = templates.startResponse();
+      break;
+    case 'noFrame':
+      response = templates.textResponse('No Worries, explore our page!');
+      break;
+    case 'greeting':
+      response = templates.pictureResponse();
+      break;
+    case 'confirmPicture':
+      response = templates.textResponse('Please wait while we generate your picture');
+      // SparkAR Server handler async 
+      // send (name,url) => id
+      let fR = templates.filterResponse('id');
+      callSendAPI(sender_psid, fR);
+      break;
+    default:
+      response = templates.textResponse('Welcome to Jarvis!!');
   }
   // Send the message to acknowledge the postback
   callSendAPI(sender_psid, response);
 }
+
+// async function callServer(name){
+//   request(
+//     {
+//       uri: "https://hacker-nauts-sparkarbackenserver.glitch.me/name",
+//       method: "GET",
+//     },
+//     (err, res, body) => {
+//       if (!err) {
+//         console.log("message sent!");
+//         return body;
+//       } else {
+//         console.error("Unable to send message:" + err);
+//       }
+//     }
+//   );
+// }
 
 function callSendAPI(sender_psid, response) {
   // Construct the message body

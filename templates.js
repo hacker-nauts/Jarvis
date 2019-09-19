@@ -4,7 +4,7 @@ module.exports = {
       text: `${text}`
     };
   },
-  filterResponse: () => {
+  filterResponse: (id) => {
     return {
       attachment: {
         type: "template",
@@ -14,7 +14,7 @@ module.exports = {
           buttons: [
             {
               type: "web_url",
-              url: "https://www.facebook.com/fbcameraeffects/tryit/377229799841547/",
+              url: `https://www.facebook.com/fbcameraeffects/tryit/${id}/`,
               title: "Try Now",
               webview_height_ratio: "full"
             }
@@ -33,13 +33,13 @@ module.exports = {
           buttons: [
             {
               type: "postback",
-              title: "Yes",
-              payload: "yes"
+              title: "Yes, love to ♥",
+              payload: "yesFrame"
             },
             {
               type: "postback",
-              title: "No",
-              payload: "no"
+              title: "No, I'm uncool!",
+              payload: "noFrame"
             }
           ]
         }
@@ -51,12 +51,35 @@ module.exports = {
       attachment: {
         type: "template",
         payload: {
-          template_type: "buttons",
+          template_type: "button",
           text: "Confirm your Picture for the Frame",
           buttons: [
             {
               type: "postback",
-              title: "Yes!",
+              title: "Confirm",
+              payload: "confirmPicture"
+            },
+            {
+              type: "postback",
+              title: "No",
+              payload: "denyPicture"
+            }
+          ]
+        }
+      }
+    };
+  },
+  startResponse: () => {
+    return {
+      attachment: {
+        type: "template",
+        payload: {
+          template_type: "button",
+          text: "Would you like a caption for the Frame",
+          buttons: [
+            {
+              type: "postback",
+              title: "Yes",
               payload: "yes"
             },
             {
